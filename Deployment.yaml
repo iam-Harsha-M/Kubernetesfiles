@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-mart
+  labels:
+    app: frontend-mart
+
+  annotations:
+    Description: "frontend deployment"
+
+
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: frontend-mart
+
+
+  template:
+    metadata:
+      labels:
+        app: frontend-mart
+
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 200m
+
+            limits:
+              memory: 512Mi
+              cpu: 400m
+
+
