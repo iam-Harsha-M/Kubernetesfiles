@@ -95,6 +95,44 @@ spec:
     targetPort: 8080
   type: ClusterIP  # Use NodePort or LoadBalancer for external access
 
+#############################
+🧳 Step-by-Step: Load Local Image into Kubernetes (with containerd) without loading to docker registry
+
+1️⃣ Save your Docker image as a .tar archive
+
+docker save healthcheck-app:latest -o healthcheck-app.tar
+
+2️⃣ Transfer the image to your Kubernetes node
+If your cluster is remote, use scp or similar:
+
+scp healthcheck-app.tar user@your-node:/tmp/
+
+3️⃣ Import the image into containerd
+SSH into your node and run:
+
+sudo ctr -n=k8s.io images import /tmp/healthcheck-app.tar
+
+✅ This makes the image visible to Kubernetes via containerd. You can verify with:
+sudo crictl images
+
+📦 Update Your Deployment YAML
+Make sure your deployment uses:
+
+image: healthcheck-app:latest
+imagePullPolicy: Never
+
+kubectl apply -f deployment.yaml
+
+🧠 Why This Works
+Kubernetes doesn’t use Docker directly anymore—it talks to container runtimes like containerd via the CRI (Container Runtime Interface). So even if your image exists in Docker, Kubernetes won’t see it unless it’s loaded into containerd.
+
+
+
+
+
+
+
+
 
 
 
