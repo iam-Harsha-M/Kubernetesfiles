@@ -126,6 +126,52 @@ kubectl apply -f deployment.yaml
 🧠 Why This Works
 Kubernetes doesn’t use Docker directly anymore—it talks to container runtimes like containerd via the CRI (Container Runtime Interface). So even if your image exists in Docker, Kubernetes won’t see it unless it’s loaded into containerd.
 
+#############################
+taking image from private registry using secrets
+
+kubectl create secret docker-registry regcred \
+  --docker-username=your-username \
+  --docker-password=your-password \
+  --docker-email=your-email \
+  --namespace=default
+
+Then reference it in your deployment:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcheck-deployment
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthcheck-app
+  template:
+    metadata:
+      labels:
+        app: healthcheck-app
+    spec:
+      containers:
+      - name: flask-container
+        image: iamharsham/healthcheck-app:v1
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      imagePullSecrets:
+      - name: regcred
+
 
 
 
