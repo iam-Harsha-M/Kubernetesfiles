@@ -1,0 +1,101 @@
+Here's a complete example of a Kubernetes Deployment that includes a /health endpoint exposed by a sample app (in Python with Flask) and configured with both liveness and readiness probes.
+
+Step 1: App Code (app.py)
+
+This app serves the /health endpoint on port 8080.
+
+# app.py
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/health')
+def health():
+    return "OK", 200
+
+@app.route('/')
+def root():
+    return "Hello from Flask!", 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+
+📦 Step 2: Dockerfile
+This builds your Python app into a container image.
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY app.py .
+
+RUN pip install flask
+
+EXPOSE 8080
+CMD ["python", "app.py"]
+
+Build and tag the image:
+
+docker build -t healthcheck-app .
+
+####Push it to a container registry if you're using Kubernetes in the cloud:
+
+docker tag healthcheck-app your-registry/healthcheck-app
+docker push your-registry/healthcheck-app
+
+🚀 Step 3: Kubernetes Deployment (deployment.yaml)
+
+This runs the app with health checks:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcheck-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthcheck-app
+  template:
+    metadata:
+      labels:
+        app: healthcheck-app
+    spec:
+      containers:
+      - name: flask-container
+        image: your-registry/healthcheck-app
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+
+🌐 Step 4: Kubernetes Service (service.yaml)
+This exposes your app internally or externally.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcheck-service
+spec:
+  selector:
+    app: healthcheck-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: ClusterIP  # Use NodePort or LoadBalancer for external access
+
+
+
+
+
